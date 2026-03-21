@@ -27,7 +27,7 @@ type State struct {
 func main() {
 	kafkaBrokers := os.Getenv("KAFKA_BROKERS")
 	if kafkaBrokers == "" {
-		log.Fatal("KAFKA_BROKERS is not set")
+		kafkaBrokers = "localhost:9092"
 	}
 
 	producer, err := kafka.NewProducer(&kafka.ConfigMap{
@@ -141,7 +141,7 @@ func (s *State) handleSendUserEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.sendEvent(event, movieTopic)
+	err = s.sendEvent(event, userTopic)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -176,7 +176,7 @@ func (s *State) handleSendPaymentEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.sendEvent(event, movieTopic)
+	err = s.sendEvent(event, paymentTopic)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -193,10 +193,15 @@ func (s *State) sendEvent(event any, topic string) error {
 	if err != nil {
 		return err
 	}
-	s.KafkaProducer.Produce(&kafka.Message{
+
+	fmt.Printf("Sending event %v to topic: %s", event, topic)
+	err = s.KafkaProducer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 		Value:          json,
 	}, nil)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
