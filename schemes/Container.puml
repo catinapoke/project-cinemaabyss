@@ -4,7 +4,6 @@ title Cinema Abyss Container Diagram
 top to bottom direction
 !includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Container.puml
 
-
 Person(User, "User", "A user of Cinema Abyss system")
 
 System_Ext(RecommendationSystem, "Recommendation System", "(RabbitMQ) System recommends movies to users")
@@ -12,30 +11,69 @@ System_Ext(PaymentSystem, "Payment System", "(REST API) System handles payments 
 System_Ext(OnlineStreamingService, "Online Cinema Streaming Service", "(REST API) System handles online streaming of movies")
 System_Ext(FileStorage, "S3 File Storage", "System stores movies and other files")
 
+/'
+Домен: Агрегация онлайн кинотеатров
+Основные поддомены:
+- Поддомен каталога фильмов и метаданных
+  - Контекст поиска фильмов
+  - Контекст изучения информации по фильму
+  - Контекст интеграции с внешними источниками
+- Поддомен стриминга видео
+
+Вспомогательные поддомены:
+- Поддомен оценок и рейтинга фильмов
+- Поддомен управления профилем
+  - Контекст личной информации
+  - Контекст пользовательских подборок
+- Поддомен рекомендаций
+- Поддомен лояльности
+  - Контекст акций
+  - Контекст тарифов на подписки
+
+Универсальные домены:
+- Поддомен авторизации
+- Поддомен платежей
+'/
+
 System_Boundary(CinemaAbyss, "Cinema Abyss System") {
-  Container(MobileApp, "Mobile App", "Swift", "User interface for mobile devices")
-  Container(WebApp, "Web Application", "Vue.js", "User interface for web devices")
-  Container(StandaloneApp, "Standalone App", "React Native", "User interface for standalone devices")
+  ' Клиентские приложения
+  Container(MobileApp, "Mobile App", "Swift", "Мобильное приложение")
+  Container(WebApp, "Web Application", "Vue.js", "Веб-приложение")
+  Container(StandaloneApp, "Standalone App", "React Native", "Desktop приложение")
 
-  Container(APIGateway, "API Gateway", "Golang", "Single point of entry for clients to access the system")
+  Container(APIGateway, "API Gateway", "Golang", "Маршрутизация запросов к сервисам")
 
-  Container(AuthService, "Auth Service", "Golang", "Handles authentication and authorization, emission tokens")
-  ContainerDb(AuthDatabase, "Auth database", "PostgreSQL", "Stores user data, roles and bindings")
-
-  Container(CatalogService, "Catalog Service", "Golang", "Handles catalog of movies")
+  ' Поддомен каталога фильмов и метаданных
+  Container(CatalogService, "Catalog Service", "Golang", "Поиск фильмов, информация по фильму, интеграция с внешними источниками")
   ContainerDb(CatalogDatabase, "Catalog Database", "PostgreSQL", "Stores catalog of movies")
 
-  Container(MetadataService, "Metadata Service", "Golang", "Handles metadata of movies")
-  ContainerDb(MetadataDatabase, "Metadata Database", "PostgreSQL", "Stores metadata of movies")
+  ' Поддомен стриминга видео
+  Container(StreamingService, "Streaming Service", "Golang", "Стриминг видео")
+  ContainerDb(StreamingDatabase, "Streaming Database", "PostgreSQL", "Stores data for streaming video")
 
-  Container(RecommendationService, "Recommendation Service", "Golang", "Handles recommendation of movies")
+  ' Поддомен оценок и рейтинга фильмов
+  Container(RatingService, "Rating Service", "Golang", "Оценка фильмов")
+  ContainerDb(RatingDatabase, "Rating Database", "PostgreSQL", "Stores ratings of movies")
+
+  ' Поддомен управления профилем
+  Container(ProfileService, "Profile Service", "Golang", "Управление профилем и подборками")
+  ContainerDb(ProfileDatabase, "Profile Database", "PostgreSQL", "Stores profile data")
+
+  ' Поддомен рекомендаций
+  Container(RecommendationService, "Recommendation Service", "Golang", "Персональные рекомендации")
   ContainerDb(RecommendationDatabase, "Recommendation Database", "PostgreSQL", "Stores recommendation of movies")
 
-  Container(PaymentService, "Payment Service", "Golang", "Handles payments for movies")
+  ' Поддомен лояльности
+  Container(LoyaltyService, "Loyalty Service", "Golang", "Акции, тарифы на подписки")
+  ContainerDb(LoyaltyDatabase, "Loyalty Database", "PostgreSQL", "Stores loyalty data")
+
+  ' Поддомен платежей
+  Container(PaymentService, "Payment Service", "Golang", "Оплата подписки")
   ContainerDb(PaymentDatabase, "Payment Database", "PostgreSQL", "Stores payments for movies")
 
-  Container(StreamingProxy, "Streaming Proxy", "Golang", "Handles online streaming of movies")
-  ContainerDb(StreamingProxyDatabase, "Streaming Proxy Database", "PostgreSQL", "Stores online streaming of movies")
+  ' Поддомен авторизации
+  Container(AuthService, "Auth Service", "Golang", "Handles authentication and authorization, emission tokens")
+  ContainerDb(AuthDatabase, "Auth database", "PostgreSQL", "Stores user data, roles and bindings")
 }
 
 Rel(User, MobileApp, "Uses Mobile App to access the system")
@@ -46,25 +84,34 @@ Rel(WebApp, APIGateway, "Uses API Gateway to access the system")
 Rel(MobileApp, APIGateway, "Uses API Gateway to access the system")
 Rel(StandaloneApp, APIGateway, "Uses API Gateway to access the system")
 
-Rel(APIGateway, AuthService, "Register user, request token, set house and roles, register hub to house")
-Rel(APIGateway, MetadataService, "Forwards requests to Metadata Service")
-Rel(APIGateway, CatalogService, "Forwards requests to Catalog Service")
-Rel(APIGateway, PaymentService, "Forwards requests to Payment Service")
-Rel(APIGateway, StreamingProxy, "Forwards requests to Streaming Proxy")
+Rel(APIGateway, CatalogService, "Поиск фильмов, чтение информации по фильму")
+Rel(APIGateway, StreamingService, "Получение данных для стриминга видео")
+Rel(APIGateway, RatingService, "Оценка фильмов")
+Rel(APIGateway, ProfileService, "Управление профилем и подборками")
+Rel(APIGateway, LoyaltyService, "Получение акций и тарифов на подписку")
+Rel(APIGateway, AuthService, "Регистрация пользователя и получение токена")
 
-Rel(CatalogService, SubscriptionService, "Checks subscription status of user")
-Rel(CatalogService, RecommendationService, "Requests recommendation of movies")
+Rel(CatalogService, LoyaltyService, "Проверка статуса подписки пользователя")
+Rel(CatalogService, RecommendationService, "Получение персональных рекомендаций")
 
-Rel(AuthService, AuthDatabase, "Read/writes user data, roles and bindings")
-Rel(MetadataService, MetadataDatabase, "Read/writes metadata of movies")
-Rel(RecommendationService, RecommendationDatabase, "Read/writes recommendation of movies")
-Rel(PaymentService, PaymentDatabase, "Read/writes payments for movies")
-Rel(StreamingProxy, StreamingProxyDatabase, "Read/writes online streaming of movies")
-Rel(CatalogService, CatalogDatabase, "Read/writes catalog of movies")
+Rel(AuthService, AuthDatabase, "Чтение/запись данных пользователя, ролей и связей")
+Rel(CatalogService, CatalogDatabase, "Чтение/запись данных каталога фильмов")
+Rel(RatingService, RatingDatabase, "Чтение/запись данных оценок фильмов")
+Rel(ProfileService, ProfileDatabase, "Чтение/запись данных профиля пользователя")
+Rel(RecommendationService, RecommendationDatabase, "Чтение/запись данных персональных рекомендаций")
+Rel(LoyaltyService, LoyaltyDatabase, "Чтение/запись данных акций и тарифов на подписку")
+Rel(PaymentService, PaymentDatabase, "Чтение/запись данных платежей")
+Rel(StreamingService, StreamingDatabase, "Чтение/запись данных для стриминга видео")
 
-Rel(StreamingProxy, FileStorage, "Stream movies")
-Rel(StreamingProxy, OnlineStreamingService, "Stream movies to users")
+Rel(ProfileService, RatingService, "Получение оценок фильмов пользователя")
+Rel(CatalogService, RatingService, "Агрегация оценок по фильму")
 
-Rel(PaymentService, PaymentSystem, "Send payments requests")
-Rel(RecommendationService, RecommendationSystem, "Send recommendation requests")
+Rel(StreamingService, FileStorage, "Стриминг видео с S3")
+Rel(StreamingService, OnlineStreamingService, "Стриминг видео со стороннего сервиса")
+
+Rel(LoyaltyService, PaymentService, "Генерация запроса на оплату подписки по тарифу с учетом скидки")
+
+Rel(PaymentService, PaymentSystem, "Отправка запросов на оплату")
+Rel(RecommendationService, RecommendationSystem, "Интеграция со сторонней системой рекомендаций")
+
 @enduml
