@@ -51,7 +51,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 func routeRequest(
 	monolithURL string,
 	moviesServiceURL string,
-	_ string,
+	eventsServiceURL string,
 	gradualMigration bool,
 	moviesMigrationPercentInt int,
 ) func(w http.ResponseWriter, r *http.Request) {
@@ -59,6 +59,7 @@ func routeRequest(
 	return func(rw http.ResponseWriter, req *http.Request) {
 		// берем путь из запроса
 		url := req.URL.Path
+		query := req.URL.Query().Encode()
 		method := req.Method
 
 		// читаем параметры запроса
@@ -72,9 +73,14 @@ func routeRequest(
 		var targetURL string = monolithURL
 		if strings.HasPrefix(url, "/api/movies") && gradualMigration && rand.Intn(100) < moviesMigrationPercentInt {
 			targetURL = moviesServiceURL
+		} else if strings.HasPrefix(url, "/api/events") {
+			targetURL = eventsServiceURL
 		}
 
 		targetURL = targetURL + url
+		if query != "" {
+			targetURL = targetURL + "?" + query
+		}
 
 		// кидаем запрос на сервис
 		request, err := http.NewRequest(method, targetURL, bytes.NewBuffer(body))
