@@ -1,0 +1,43 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: movies-service-cb
+  namespace: cinemaabyss
+spec:
+  host: movies-service.cinemaabyss.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100          # максимальное количество TCP‑соединений
+        connectTimeout: 3s           # таймаут установки соединения
+      http:
+        http1MaxPendingRequests: 10  # сколько запросов могут ждать в очереди
+        http2MaxRequests: 100        # максимальное количество одновременных запросов
+        maxRequestsPerConnection: 10 # сколько запросов можно отправить по одному TCP‑соединению перед его закрытием
+    outlierDetection:
+      consecutive5xxErrors: 5        # после 5 последовательных ответов с кодом 5xx
+      interval: 30s                  # период, за который собирается статистика для обнаружения ошибок
+      baseEjectionTime: 30s          # минимальное время, на которое под удаляется из балансировки
+      maxEjectionPercent: 50         # максимум подов, которые могут быть выселены одновременно
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: monolith-cb
+  namespace: cinemaabyss
+spec:
+  host: monolith.cinemaabyss.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 3s
+      http:
+        http1MaxPendingRequests: 10
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 10
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50

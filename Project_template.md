@@ -4,8 +4,51 @@
 
 1. Спроектируйте to be архитектуру КиноБездны, разделив всю систему на отдельные домены и организовав интеграционное взаимодействие и единую точку вызова сервисов.
 Результат представьте в виде контейнерной диаграммы в нотации С4.
-Добавьте ссылку на файл в этот шаблон
-[ссылка на файл](ссылка)
+
+### Решение 
+#### DDD
+
+Выявленные сценарии пользования:
+- авторизация, регистрация, управление профилем
+- поиск фильмов
+- прочесть информацию по фильму
+- поставить оценку
+- оплатить/отменить/продлить подписку
+- получить скидку при оплате
+- посмотреть видео (стриминг)
+- получить рекомендации в персональные подборки
+- составить свою подборку в избранном
+
+
+Домен: Агрегация онлайн кинотеатров
+Основные поддомены:
+- Поддомен каталога фильмов и метаданных
+  - Контекст поиска фильмов
+  - Контекст изучения информации по фильму
+  - Контекст интеграции с внешними источниками
+- Поддомен стриминга видео
+
+Вспомогательные поддомены:
+- Поддомен оценок и рейтинга фильмов
+- Поддомен управления профилем
+  - Контекст личной информации
+  - Контекст пользовательских подборок
+- Поддомен рекомендаций
+- Поддомен лояльности
+  - Контекст акций
+  - Контекст тарифов на подписки
+
+Универсальные домены:
+- Поддомен авторизации
+- Поддомен платежей
+
+#### Диаграмма C4 
+
+Контекст
+![](schemes/Context.png)
+
+Контейеры
+![](schemes/Container.png)
 
 
 ## Задание 2
@@ -59,6 +102,12 @@
 Необходимые тесты для проверки этого API вызываются при запуске npm run test:local из папки tests/postman 
 Приложите скриншот тестов и скриншот состояния топиков Kafka http://localhost:8090 
 
+#### Результаты тестов
+![](tests/results/test-results.png)
+![](tests/results/topics.png)
+![](tests/results/topic-movie.png)
+![](tests/results/topic-user.png)
+![](tests/results/topic-payment.png)
 
 ## Задание 3
 
@@ -273,7 +322,9 @@ cat .docker/config.json | base64
 
 #### Шаг 3
 Добавьте сюда скриншота вывода при вызове https://cinemaabyss.example.com/api/movies и  скриншот вывода event-service после вызова тестов.
-
+![](./tests/results/kube-tests.png)
+![](./tests/results/kube-movies.png)
+![](./tests/results/kube-events.png)
 
 ## Задание 4
 Для простоты дальнейшего обновления и развертывания вам как архитектуру необходимо так же реализовать helm-чарты для прокси-сервиса и проверить работу 
@@ -331,7 +382,7 @@ kubectl delete  namespace cinemaabyss
 ```
 Запустите 
 ```bash
-helm install cinemaabyss .\src\kubernetes\helm --namespace cinemaabyss --create-namespace
+helm install cinemaabyss ./src/kubernetes/helm --namespace cinemaabyss --create-namespace
 ```
 Если в процессе будет ошибка
 ```code
@@ -349,6 +400,8 @@ minikube tunnel
 https://cinemaabyss.example.com/api/movies
 и приложите скриншот развертывания helm и вывода https://cinemaabyss.example.com/api/movies
 
+![](./tests/results/helm-deploy.png)
+![](./tests/results/helm-movies.png)
 
 # Задание 5
 Компания планирует активно развиваться и для повышения надежности, безопасности, реализации сетевых паттернов типа Circuit Breaker и канареечного деплоя вам как архитектору необходимо развернуть istio и настроить circuit breaker для monolith и movies сервисов.
@@ -362,13 +415,13 @@ helm install istio-base istio/base -n istio-system --set defaultRevision=default
 helm install istio-ingressgateway istio/gateway -n istio-system
 helm install istiod istio/istiod -n istio-system --wait
 
-helm install cinemaabyss .\src\kubernetes\helm --namespace cinemaabyss --create-namespace
+helm install cinemaabyss ./src/kubernetes/helm --namespace cinemaabyss --create-namespace
 
 kubectl label namespace cinemaabyss istio-injection=enabled --overwrite
 
 kubectl get namespace -L istio-injection
 
-kubectl apply -f .\src\kubernetes\circuit-breaker-config.yaml -n cinemaabyss
+kubectl apply -f ./src/kubernetes/circuit-breaker-config.yaml -n cinemaabyss
 
 ```
 
@@ -422,3 +475,5 @@ kubectl delete namespace istio-system
 kubectl delete all --all -n cinemaabyss
 kubectl delete namespace cinemaabyss
 ```
+
+![](./tests/results/circuit-breaker.png)

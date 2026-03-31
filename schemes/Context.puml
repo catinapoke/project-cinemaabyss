@@ -1,0 +1,22 @@
+@startuml
+title Cinema Abyss Context Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Context.puml
+
+Person(User, "User", "A user of Cinema Abyss system")
+System(CinemaAbyss, "Cinema Abyss", "Has metadata, content, users and etc.")
+
+System_Ext(RecommendationSystem, "Recommendation System", "(RabbitMQ) System recommends movies to users")
+System_Ext(PaymentSystem, "Payment System", "(REST API) System handles payments for users")
+System_Ext(OnlineStreamingService, "Online Cinema Streaming Service", "(REST API) System handles online streaming of movies")
+System_Ext(FileStorage, "S3 File Storage", "System stores movies and other files")
+
+Rel(User, CinemaAbyss, "Registers in system, tracks seen movies, rates movies, pays for subscription, watches movies")
+Rel(CinemaAbyss, RecommendationSystem, "Uses recommendation system to recommend movies to users")
+Rel(CinemaAbyss, PaymentSystem, "Uses payment system to handle payments for users")
+Rel(CinemaAbyss, OnlineStreamingService, "Uses online streaming service to stream movies to users")
+Rel(CinemaAbyss, FileStorage, "Uses file storage to store movies and other files")
+
+@enduml
